@@ -19,6 +19,8 @@
     "express": "^4.17.1",
     "helmet": "^4.3.1",
     "morgan": "^1.10.0",
+    "uuid": "^8.3.2",
+    "valid-url": "^1.0.9",
     "winston": "^3.3.3"
   },
   "devDependencies": {
