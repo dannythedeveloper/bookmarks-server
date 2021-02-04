@@ -1,4 +1,4 @@
-'use strict';
+/* eslint-disable strict */
 
 const app = require('./app');
 const { PORT } = require('./config');

@@ -1,4 +1,4 @@
-'use strict';
+/* eslint-disable strict */
 
 module.exports = {
   PORT: process.env.PORT || 8000,
