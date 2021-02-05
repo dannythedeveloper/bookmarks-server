@@ -1,6 +1,7 @@
 /* eslint-disable strict */
 const { expect } = require('chai');
 const knex = require('knex');
+const { describe } = require('mocha');
 const supertest = require('supertest');
 const app = require('../src/app');
 const { makeBookmarksArray, makeMaliciousBookmark } = require('./bookmarks.fixtures');
@@ -236,6 +237,40 @@ describe('Bookmarks Endpoints', function() {
           expect(res.body.title).to.eql(expectedBookmark.title);
           expect(res.body.description).to.eql(expectedBookmark.description);
         });
+    });
+  });
+
+  describe('DELETE /bookmarks/:bookmark_id', () => {
+    context('Given no articles', () => {
+      it('responds with 404', () => {
+        const bookmarkId = 123456;
+        return supertest(app)
+          .delete(`/bookmarks/${bookmarkId}`)
+          .expect(404, { error: { message: 'Bookmark doesn\'t exist' } });
+      });
+    });
+
+    context('Given there are bookmarks in the database', () => {
+      const testBookmarks = makeBookmarksArray();
+
+      beforeEach('insert bookmarks', () => {
+        return db 
+          .into('bookmarks')
+          .insert(testBookmarks);
+      });
+
+      it('responds with 204 and removes the bookmark', () => {
+        const idToRemove = 2;
+        const expectedBookmarks = testBookmarks.filter(bookmark => bookmark.id !== idToRemove);
+        return supertest(app)
+          .delete(`/bookmarks/${idToRemove}`)
+          .expect(204)
+          .then(res => 
+            supertest(app)
+              .get('/bookmarks')
+              .expect(expectedBookmarks)  
+          );
+      });
     });
   });
 });
