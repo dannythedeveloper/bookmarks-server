@@ -1,4 +1,5 @@
 /* eslint-disable strict */
+const path = require('path');
 const express = require('express');
 const xss = require('xss');
 const { isWebUri } = require('valid-url');
@@ -17,7 +18,7 @@ const serializeBookmark = bookmark => ({
 });
 
 bookmarksRouter
-  .route('/bookmarks')
+  .route('/')
   .get((req, res, next) => {
     BookmarksService.getAllBookmarks(req.app.get('db'))
       .then(bookmarks => {
@@ -63,14 +64,14 @@ bookmarksRouter
         logger.info(`Bookmark with id ${bookmark.id} created.`);
         res
           .status(201)
-          .location(`/bookmarks/${bookmark.id}`)
+          .location(path.posix.join(req.originalUrl, `/${bookmark.id}`))
           .json(serializeBookmark(bookmark));
       })
       .catch(next);
   });
 
 bookmarksRouter
-  .route('/bookmarks/:bookmark_id')
+  .route('/:bookmark_id')
   .all((req, res, next) => {
     const { bookmark_id } = req.params;
     BookmarksService.getById(req.app.get('db'), bookmark_id)
