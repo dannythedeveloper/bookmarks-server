@@ -167,49 +167,23 @@ describe('Bookmarks Endpoints', function() {
   });
 
   describe('POST /api/bookmarks', () => {
-    it('responds with 400 missing \'title\' if not supplied', () => {
-      const newBookmarkMissingTitle = {
-        // title: 'test-title',
+    ['title', 'url', 'rating'].forEach(field => {
+      const newBookmark = {
+        title: 'Test-Title',
         url: 'https://test.com',
-        rating: 1,
+        rating: 3
       };
-      return supertest(app)
-        .post('/api/bookmarks')
-        .send(newBookmarkMissingTitle)
-        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
-        .expect(400, {
-          error: { message: '\'title\' is required' }
-        });
-    });
-
-    it('responds with 400 missing \'url\' if not supplied', () => {
-      const newBookmarkMissingUrl = {
-        title: 'New Bookmark',
-        // url: 'https://www.google.com',
-        rating: 4
-      };
-      return supertest(app)
-        .post('/api/bookmarks')
-        .send(newBookmarkMissingUrl)
-        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
-        .expect(400, {
-          error: { message: '\'url\' is required'}
-        });
-    });
-
-    it('responds with 400 missing \'rating\' if not supplied', () => {
-      const newBookmarkMissingRating = {
-        title: 'New Bookmark',
-        url: 'https://www.google.com',
-        // rating: 4
-      };
-      return supertest(app)
-        .post('/api/bookmarks')
-        .send(newBookmarkMissingRating)
-        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
-        .expect(400, {
-          error: { message: '\'rating\' is required'}
-        });
+    
+      it(`responds with 400 missing '${field} if not supplied`, () => {
+        delete newBookmark[field];
+        return supertest(app)
+          .post('/api/bookmarks')
+          .send(newBookmark)
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+          .expect(400, {
+            error: { message: `'${field}' is required` }
+          });
+      });
     });
 
     it('responds with 400 invalid \'rating\' if not between 0 and 5', () => {
