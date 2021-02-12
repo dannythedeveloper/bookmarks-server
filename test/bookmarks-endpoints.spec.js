@@ -286,7 +286,7 @@ describe('Bookmarks Endpoints', function() {
   });
 
   describe('DELETE /api/bookmarks/:bookmark_id', () => {
-    context('Given no articles', () => {
+    context('Given no bookmarks', () => {
       it('responds with 404', () => {
         const bookmarkId = 123456;
         return supertest(app)
@@ -319,6 +319,126 @@ describe('Bookmarks Endpoints', function() {
               .expect(expectedBookmarks)  
           );
       });
+    });
+  });
+
+  describe.only('PATCH /api/bookmarks/:bookmark_id', () => {
+    context('Given no bookmarks', () => {
+      it('responds with 404', () => {
+        const bookmarkId = 123456;
+        return supertest(app)
+          .delete(`/api/bookmarks/${bookmarkId}`)
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+          .expect(404, { error: { message: 'Bookmark Not Found' } });
+      });
+    });
+
+    context('Given there are bookmarks in the database', () => {
+      const testBookmarks = makeBookmarksArray();
+
+      beforeEach('insert bookmarks', () => {
+        return db 
+          .into('bookmarks')
+          .insert(testBookmarks);
+      });
+
+      it('responds with 204 and updates the bookmark', () => {
+        const idToUpdate = 2;
+        const updateBookmark = {
+          title: 'Updated Bookmark Title',
+          description: 'Updated Test description',
+          url: 'https://www.updated.com',
+          rating: 3   
+        };
+        const expectedBookmark = {
+          ...testBookmarks[idToUpdate - 1],
+          ...updateBookmark
+        };
+
+        return supertest(app)
+          .patch(`/api/bookmarks/${idToUpdate}`)
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+          .send(updateBookmark)
+          .expect(204)
+          .then(res => 
+            supertest(app)
+              .get(`/api/bookmarks/${idToUpdate}`)
+              .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+              .expect(expectedBookmark)
+          );
+      });
+
+      it('responds with 400 when no required fields supplied', () => {
+        const idToUpdate = 2;
+        return supertest(app)
+          .patch(`/api/bookmarks/${idToUpdate}`)
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+          .send({ irrelevantField: 'foo' })
+          .expect(400, {
+            error: {
+              message: 'Request body must contain either \'title\', \'url\', \'description\', or \'rating\''
+            }
+          });
+      });
+
+      it('responds with 204 when updating only a subset of fields given', () => {
+        const idToUpdate = 2;
+        const updateBookmark = {
+          title: 'Updated Bookmark Title'
+        };
+        const expectedBookmark = {
+          ...testBookmarks[idToUpdate - 1],
+          ...updateBookmark
+        };
+
+        return supertest(app)
+          .patch(`/api/bookmarks/${idToUpdate}`)
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+          .send({
+            ...updateBookmark,
+            fieldToIgnore: 'should be in the GET response'
+          })
+          .expect(204)
+          .then(res => 
+            supertest(app)
+              .get(`/api/bookmarks/${idToUpdate}`)  
+              .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+              .expect(expectedBookmark)
+          );
+      });
+
+      it('responds with 400 invalid \'rating\' if not between 0 and 5', () => {
+        const idToUpdate = 2;
+        const updateInvalidRating = {
+          rating: 'invalid'
+        };
+        return supertest(app)
+          .patch(`/api/bookmarks/${idToUpdate}`)
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+          .send(updateInvalidRating)
+          .expect(400, {
+            error: {
+              message: '\'rating\' must be a number between 0 and 5'
+            }
+          });
+      });
+
+      it('responds with 400 invalid \'url\' if not a valid URL', () => {
+        const idToUpdate = 2;
+        const updateInvalidUrl = {
+          url: 'htp://invalid-url'
+        };
+        return supertest(app)
+          .patch(`/api/bookmarks/${idToUpdate}`)
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+          .send(updateInvalidUrl)
+          .expect(400, {
+            error: {
+              message: '\'url\' must be a valid URL'
+            }
+          });
+      });
+
     });
   });
 });
